@@ -1,0 +1,251 @@
+# pizza_analysis
+
+Import data
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_excel("Enhanced_pizza_sell_data_2024-25.xlsx")
+
+print(df.head())
+print(df.columns)
+```
+
+
+## Section 1 — Customer Segmentation & Preferences
+
+This section analyzes customer ordering preferences, including pizza type popularity, size preference by time, and weekend vs. weekday behavior.
+
+
+### 1.1 Most Popular Pizza Types
+
+```{python}
+pizza_type_counts = df["Pizza Type"].value_counts()
+
+print("Most Popular Pizza Types:")
+print(pizza_type_counts)
+
+plt.figure(figsize=(8,5))
+sns.barplot(x=pizza_type_counts.index, y=pizza_type_counts.values)
+plt.title("Most Popular Pizza Types")
+plt.xlabel("Pizza Type")
+plt.ylabel("Number of Orders")
+plt.xticks(rotation=45)
+plt.show()
+```
+
+### Business Insight
+
+Non-Veg pizzas were the most popular category, followed closely by Veg and Cheese Burst pizzas.
+
+Traditional specialty pizzas such as Deep Dish and Thin Crust had significantly lower demand, suggesting limited customer preference in this dataset.
+
+The strong performance of Veg and Vegan pizzas may indicate increasing demand for vegetarian alternatives.
+
+
+
+
+### 1.2 Pizza Size Preference by Time of Day
+
+```{python}
+size_by_hour = pd.crosstab(df["Order Hour"], df["Pizza Size"])
+
+print(size_by_hour)
+
+size_by_hour.plot(kind="bar", figsize=(12,6))
+plt.title("Pizza Size Preference by Order Hour")
+plt.xlabel("Order Hour")
+plt.ylabel("Number of Orders")
+plt.show()
+```
+
+### Business Insight
+
+Pizza size preference varied significantly by order hour.
+
+Medium pizzas dominated during early dinner hours, especially around 18:00 and 20:00, suggesting that medium-sized orders are the most common for regular meal consumption.
+
+At 19:00, Large and XL pizzas sharply increased, indicating that customers may place larger group or family orders during peak dinner time.
+
+Small pizzas had relatively low demand throughout the day, while XL pizzas were concentrated mainly during the busiest evening period.
+
+
+
+
+### 1.3 Weekend vs Weekday Ordering Behavior
+
+```{python}
+weekend_behavior = df.groupby("Is Weekend").agg({
+    "Toppings Count": "mean",
+    "Pizza Complexity": "mean",
+    "Delivery Duration (min)": "mean",
+    "Order ID": "count"
+}).rename(columns={"Order ID": "Order Count"})
+
+print(weekend_behavior)
+
+sns.boxplot(x="Is Weekend", y="Pizza Complexity", data=df)
+plt.title("Pizza Complexity: Weekend vs Weekday")
+plt.show()
+```
+
+
+### Business Insight
+
+Weekday orders accounted for the majority of total transactions, with 718 orders compared to 286 weekend orders.
+
+Weekday orders also showed slightly higher average toppings count and pizza complexity, suggesting that customers may place more customized or complex orders during weekdays.
+
+However, average delivery duration remained very similar between weekdays and weekends, indicating that operational performance stayed relatively stable across different days of the week.
+
+The boxplot further shows that pizza complexity distributions were relatively similar for both weekday and weekend orders, although weekday orders demonstrated slightly higher median complexity.
+
+
+
+
+
+## Section 2 — Pricing & Value Perception
+
+This dataset does not contain actual price, revenue, or order amount variables. Therefore, this section uses pizza size, toppings count, and pizza complexity as proxy variables for customer value perception.
+
+### 2.1 Do Larger or More Complex Pizzas Lead to Longer Delays?
+
+```{python}
+size_delay = df.groupby("Pizza Size").agg({
+    "Delay (min)": "mean",
+    "Delivery Duration (min)": "mean",
+    "Pizza Complexity": "mean",
+    "Order ID": "count"
+}).rename(columns={"Order ID": "Order Count"})
+
+print(size_delay)
+
+sns.barplot(x="Pizza Size", y="Delay (min)", data=df)
+plt.title("Average Delay by Pizza Size")
+plt.show()
+```
+
+### Business Insight
+
+Pizza size showed a strong relationship with delivery duration, delay, and pizza complexity.
+
+Small pizzas had the shortest average delivery duration and lowest delay, indicating that simpler orders are easier and faster to prepare and deliver.
+
+Large and XL pizzas required significantly longer delivery times, which may be associated with higher preparation complexity and operational workload.
+
+XL pizzas had the highest pizza complexity score, suggesting that larger orders often involve more ingredients, customization, or group-order behavior.
+
+Medium pizzas represented the highest order volume, making them the dominant product category in the dataset.
+
+
+```{python}
+complexity_corr = df[[
+    "Pizza Complexity",
+    "Toppings Count",
+    "Topping Density",
+    "Delivery Duration (min)",
+    "Delay (min)"
+]].corr()
+
+print(complexity_corr)
+
+sns.heatmap(complexity_corr, annot=True, cmap="Blues")
+plt.title("Complexity, Toppings, Delivery Time, and Delay Correlation")
+plt.show()
+```
+
+### Business Insight
+
+Pizza Complexity and Toppings Count showed a very strong positive correlation (0.96), indicating that pizzas with more toppings are substantially more operationally complex.
+
+Delivery Duration and Delay also demonstrated a strong positive correlation (0.88), suggesting that longer delivery processes significantly increase the probability of delays.
+
+Pizza Complexity and Toppings Count both showed moderate positive relationships with Delivery Duration, indicating that highly customized orders require more operational effort and delivery time.
+
+Interestingly, Topping Density showed a moderate negative correlation with both Delivery Duration and Delay. This may indicate that smaller pizzas with dense toppings can still be prepared and delivered relatively efficiently.
+
+
+
+
+
+### 2.2 Toppings Count / Density and Delivery Time
+
+```{python}
+sns.scatterplot(
+    x="Toppings Count",
+    y="Delivery Duration (min)",
+    data=df
+)
+
+plt.title("Toppings Count vs Delivery Duration")
+plt.show()
+```
+
+### Business Insight
+
+The scatter plot suggests a positive relationship between Toppings Count and Delivery Duration.
+
+Orders with a larger number of toppings generally required longer delivery times, likely due to increased preparation complexity and operational workload.
+
+Higher topping counts also showed greater variability in delivery duration, indicating that highly customized orders may introduce operational inconsistency and delivery uncertainty.
+
+
+```{python}
+sns.scatterplot(
+    x="Topping Density",
+    y="Delivery Duration (min)",
+    data=df
+)
+
+plt.title("Topping Density vs Delivery Duration")
+plt.show()
+```
+
+### Business Insight
+
+The scatter plot indicates a moderate negative relationship between Topping Density and Delivery Duration.
+
+Orders with higher topping density generally showed shorter delivery durations. This may occur because smaller pizzas can have relatively high topping density while still requiring less preparation and transportation time.
+
+This finding suggests that total operational complexity and pizza size may influence delivery duration more strongly than topping density alone.
+
+
+
+
+
+### 2.3 Payment Method and Order Size
+
+```{python}
+payment_size = pd.crosstab(df["Payment Method"], df["Pizza Size"])
+
+print(payment_size)
+
+payment_size.plot(kind="bar", figsize=(10,6))
+plt.title("Payment Method vs Pizza Size")
+plt.xlabel("Payment Method")
+plt.ylabel("Number of Orders")
+plt.xticks(rotation=45)
+plt.show()
+```
+
+### Business Insight
+
+Medium pizzas were the most frequently ordered size across nearly all payment methods, confirming that medium-sized pizzas represent the dominant customer preference.
+
+Card and UPI payments showed relatively higher proportions of Large and XL pizza orders, suggesting that digital payment users may be associated with larger or group-based purchases.
+
+Cash payments demonstrated a stronger preference for Small pizzas compared to digital payment methods, which may indicate lower-value or individual orders.
+
+Wallet payments also showed strong Medium pizza demand, suggesting that digital wallet promotions may be particularly effective for medium-sized pizza campaigns.
+
+Loyalty-based payment methods such as Hut Points and Domino's Cash represented only a small proportion of total transactions, indicating relatively limited usage in this dataset.
+
+
+
+
+
+
+
