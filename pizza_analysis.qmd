@@ -245,6 +245,117 @@ Loyalty-based payment methods such as Hut Points and Domino's Cash represented o
 
 
 
+## Section 3 — Operational Performance
+
+This section evaluates restaurant delivery performance, traffic impact, delay proportion, and possible service-related insights.
+
+### 3.1 Which Restaurants Outperform Average Delivery Time?
+
+```{python}
+df["Restaurant Name"] = (
+    df["Restaurant Name"]
+    .str.replace("’", "'", regex=False)
+)
+```
+
+
+```{python}
+overall_avg_time = df["Delivery Duration (min)"].mean()
+
+restaurant_perf = df.groupby("Restaurant Name").agg({
+    "Delivery Duration (min)": "mean",
+    "Delay (min)": "mean",
+    "Is Delayed": "mean",
+    "Order ID": "count"
+}).rename(columns={"Order ID": "Order Count"})
+
+restaurant_perf["Outperforms Average"] = restaurant_perf["Delivery Duration (min)"] < overall_avg_time
+
+restaurant_perf = restaurant_perf.sort_values("Delivery Duration (min)")
+
+print("Overall Average Delivery Time:", round(overall_avg_time, 2))
+print(restaurant_perf)
+```
+
+### Business Insight
+
+Papa John's demonstrated the strongest operational performance in the dataset, achieving below-average delivery duration and the lowest delay rate among major restaurants.
+
+Little Caesars also showed strong delivery efficiency, with relatively low average delivery duration and delay levels.
+
+Domino's recorded the highest delay rate, suggesting lower delivery reliability and greater operational inconsistency compared to competitors.
+
+Although Pizza Hut and Marco's Pizza had delivery durations only slightly above the overall average benchmark, their operational performance was less competitive than Papa John's and Little Caesars.
+
+
+
+```{python}
+plt.figure(figsize=(10,6))
+sns.barplot(
+    x=restaurant_perf.index,
+    y=restaurant_perf["Delivery Duration (min)"]
+)
+
+plt.axhline(overall_avg_time, linestyle="--")
+plt.title("Average Delivery Time by Restaurant")
+plt.xlabel("Restaurant")
+plt.ylabel("Average Delivery Duration")
+plt.xticks(rotation=45)
+plt.show()
+```
+
+
+
+### 3.2 Traffic Level and Delays
+
+```{python}
+traffic_delay = df.groupby("Traffic Level").agg({
+    "Delivery Duration (min)": "mean",
+    "Delay (min)": "mean",
+    "Is Delayed": "mean",
+    "Order ID": "count"
+}).rename(columns={"Order ID": "Order Count"})
+
+print(traffic_delay)
+
+sns.barplot(x="Traffic Level", y="Delay (min)", data=df)
+plt.title("Average Delay by Traffic Level")
+plt.show()
+```
+
+### 3.3 Proportion of Delayed Orders
+
+```{python}
+delay_rate = df["Is Delayed"].mean()
+
+print("Overall Delay Rate:", round(delay_rate * 100, 2), "%")
+
+delay_counts = df["Is Delayed"].value_counts()
+
+plt.figure(figsize=(6,4))
+sns.barplot(x=delay_counts.index.astype(str), y=delay_counts.values)
+plt.title("Delayed vs Non-Delayed Orders")
+plt.xlabel("Is Delayed")
+plt.ylabel("Number of Orders")
+plt.show()
+```
+
+### 3.4 Do Delays Affect Repeat Business?
+
+This dataset does not contain customer ID or repeat purchase history, so true repeat business cannot be measured. As a proxy, we compare delay behavior by payment method and peak-hour orders.
+
+```{python}
+repeat_proxy = df.groupby(["Payment Method", "Is Peak Hour"]).agg({
+    "Is Delayed": "mean",
+    "Delay (min)": "mean",
+    "Order ID": "count"
+}).rename(columns={"Order ID": "Order Count"})
+
+print(repeat_proxy)
+```
+
+
+
 
 
 
