@@ -277,17 +277,6 @@ print("Overall Average Delivery Time:", round(overall_avg_time, 2))
 print(restaurant_perf)
 ```
 
-### Business Insight
-
-Papa John's demonstrated the strongest operational performance in the dataset, achieving below-average delivery duration and the lowest delay rate among major restaurants.
-
-Little Caesars also showed strong delivery efficiency, with relatively low average delivery duration and delay levels.
-
-Domino's recorded the highest delay rate, suggesting lower delivery reliability and greater operational inconsistency compared to competitors.
-
-Although Pizza Hut and Marco's Pizza had delivery durations only slightly above the overall average benchmark, their operational performance was less competitive than Papa John's and Little Caesars.
-
-
 
 ```{python}
 plt.figure(figsize=(10,6))
@@ -303,6 +292,17 @@ plt.ylabel("Average Delivery Duration")
 plt.xticks(rotation=45)
 plt.show()
 ```
+
+### Business Insight
+
+Papa John's demonstrated the strongest operational performance in the dataset, achieving below-average delivery duration and the lowest delay rate among major restaurants.
+
+Little Caesars also showed strong delivery efficiency, with relatively low average delivery duration and delay levels.
+
+Domino's recorded the highest delay rate, suggesting lower delivery reliability and greater operational inconsistency compared to competitors.
+
+Although Pizza Hut and Marco's Pizza had delivery durations only slightly above the overall average benchmark, their operational performance was less competitive than Papa John's and Little Caesars.
+
 
 
 
@@ -323,6 +323,26 @@ plt.title("Average Delay by Traffic Level")
 plt.show()
 ```
 
+
+### Business Insight
+
+Traffic level showed a strong relationship with delivery performance.
+
+High-traffic conditions resulted in the longest average delivery duration and the highest delay rate, with more than 50% of orders being delayed under heavy traffic conditions.
+
+Low-traffic conditions demonstrated significantly better operational efficiency, with very low delay rates and shorter delivery durations.
+
+The results suggest that external traffic conditions are one of the primary drivers of delivery inefficiency and operational inconsistency.
+
+### Operational Recommendation
+
+Restaurants may consider adjusting promotional campaigns based on traffic conditions.
+
+Discounts and promotional offers could be shifted toward low-traffic or off-peak periods to smooth demand and improve delivery reliability during peak congestion periods.
+
+
+
+
 ### 3.3 Proportion of Delayed Orders
 
 ```{python}
@@ -340,6 +360,15 @@ plt.ylabel("Number of Orders")
 plt.show()
 ```
 
+### Business Insight
+
+The overall delay rate across all orders was approximately 20.92%, meaning that roughly one out of every five orders experienced delivery delays.
+
+This suggests that delivery inefficiency represents a meaningful operational challenge within the system.
+
+Combined with earlier traffic and complexity analyses, the findings indicate that high traffic conditions, peak-hour demand, and complex orders are likely major contributors to delivery delays.
+
+
 ### 3.4 Do Delays Affect Repeat Business?
 
 This dataset does not contain customer ID or repeat purchase history, so true repeat business cannot be measured. As a proxy, we compare delay behavior by payment method and peak-hour orders.
@@ -353,6 +382,405 @@ repeat_proxy = df.groupby(["Payment Method", "Is Peak Hour"]).agg({
 
 print(repeat_proxy)
 ```
+
+
+### Business Insight
+
+Peak-hour conditions significantly increased delivery delays across nearly all payment methods.
+
+Off-peak orders demonstrated very low delay rates, indicating that the operational system performs efficiently under lower-demand conditions.
+
+Card and Wallet payments showed relatively high peak-hour delay rates, which may suggest that digital payment users are associated with larger or more operationally complex orders.
+
+UPI orders demonstrated comparatively low delay rates even during peak hours, suggesting potentially more efficient order patterns or lower operational complexity.
+
+Although Hut Points showed extremely high delay rates, the small sample size (Order Count = 24) limits the reliability of this finding.
+
+
+
+
+## Section 4 — Seasonal & Time-Based Trends
+
+This section analyzes order volume and delays by month, peak hour, and order hour. The dataset does not include actual revenue, so revenue by hour cannot be directly answered.
+
+### 4.1 Monthly Order Volume and Delays
+
+```{python}
+month_order = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+]
+
+month_trends = df.groupby("Order Month").agg({
+    "Order ID": "count",
+    "Delay (min)": "mean",
+    "Is Delayed": "mean",
+    "Delivery Duration (min)": "mean"
+}).rename(columns={"Order ID": "Order Count"})
+
+# Reorder months
+month_trends = month_trends.reindex(month_order)
+
+# Print ordered table
+print(month_trends)
+
+# Plot Monthly Order Volume
+month_trends["Order Count"].plot(
+    kind="bar",
+    figsize=(10,5)
+)
+
+plt.title("Monthly Order Volume")
+plt.xlabel("Order Month")
+plt.ylabel("Number of Orders")
+
+plt.xticks(rotation=45)
+
+plt.show()
+```
+
+### Business Insight
+
+August recorded the highest order volume, indicating that it was the busiest operational month in the dataset.
+
+June and December showed the highest delivery duration and delay rates, suggesting increased operational pressure and reduced delivery efficiency during these periods.
+
+July demonstrated the strongest operational performance, with the shortest average delivery duration and one of the lowest delay rates.
+
+The findings suggest that seasonal demand fluctuations and external operational factors may significantly influence delivery performance throughout the year.
+
+
+### 4.2 Peak-Hour Orders and Delays
+
+```{python}
+peak_analysis = df.groupby("Is Peak Hour").agg({
+    "Order ID": "count",
+    "Delivery Duration (min)": "mean",
+    "Delay (min)": "mean",
+    "Is Delayed": "mean"
+}).rename(columns={"Order ID": "Order Count"})
+
+print(peak_analysis)
+
+sns.barplot(x="Is Peak Hour", y="Delay (min)", data=df)
+plt.title("Average Delay: Peak Hour vs Off-Peak Hour")
+plt.show()
+```
+
+### Business Insight
+
+Peak-hour orders dominated the dataset, accounting for the vast majority of total transactions.
+
+Delivery duration increased significantly during peak-hour periods, rising from approximately 22 minutes during off-peak hours to nearly 30 minutes during peak hours.
+
+Delay rates also increased dramatically during peak-hour operations, suggesting that operational bottlenecks and resource constraints become substantially more severe under high-demand conditions.
+
+In contrast, off-peak operations demonstrated very strong delivery reliability and low delay rates.
+
+### Operational Recommendation
+
+Restaurants may improve delivery performance by allocating additional staffing and delivery resources during peak-hour periods.
+
+Off-peak discounts and demand-smoothing strategies may also help reduce operational congestion and improve delivery reliability during high-demand windows.
+
+
+
+### 4.3 Order Volume by Hour
+
+```{python}
+hourly_orders = df.groupby("Order Hour").agg({
+    "Order ID": "count",
+    "Delay (min)": "mean",
+    "Delivery Duration (min)": "mean"
+}).rename(columns={"Order ID": "Order Count"})
+
+print(hourly_orders)
+
+plt.figure(figsize=(12,5))
+sns.lineplot(x=hourly_orders.index, y=hourly_orders["Order Count"], marker="o")
+plt.title("Order Volume by Hour")
+plt.xlabel("Order Hour")
+plt.ylabel("Number of Orders")
+plt.show()
+```
+
+
+### Business Insight
+
+Order volume was heavily concentrated between 18:00 and 20:00, confirming that dinner hours represent the primary operational demand window.
+
+Delivery duration and delay increased substantially during the evening rush period, particularly after 19:00, suggesting that operational congestion intensifies during peak dinner demand.
+
+Early afternoon periods demonstrated significantly lower delivery duration and delay levels, indicating stronger operational efficiency during off-peak hours.
+
+The findings suggest that demand concentration during dinner periods creates substantial pressure on delivery operations and contributes to reduced delivery reliability.
+
+### Operational Recommendation
+
+Restaurants may consider implementing off-peak discounts or staggered promotional campaigns to reduce demand concentration during the 18:00–20:00 dinner rush period.
+
+Additional staffing and delivery resources during late dinner hours may also help reduce operational bottlenecks and improve delivery performance.
+
+
+
+
+
+
+
+## Section 5 — Delivery Duration Prediction
+
+This section tests multiple regression models to predict delivery duration and identify the best-performing model.
+
+Target variable:
+
+`Delivery Duration (min)`
+
+Models:
+- Linear Regression
+- Random Forest
+- XGBoost
+
+Evaluation metrics:
+- MAE
+- RMSE
+- R²
+
+### 5.1 Install Required Packages
+
+```{python}
+# If needed, run this in Terminal:
+# pip install pandas numpy matplotlib seaborn scikit-learn openpyxl xgboost
+```
+
+### 5.2 Prepare Data
+
+```{python}
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
+
+target = "Delivery Duration (min)"
+
+features = [
+    "Distance (km)",
+    "Traffic Level",
+    "Is Peak Hour",
+    "Is Weekend",
+    "Restaurant Name",
+    "Pizza Size",
+    "Pizza Type",
+    "Toppings Count",
+    "Topping Density",
+    "Pizza Complexity",
+    "Traffic Impact",
+    "Order Hour",
+    "Restaurant Avg Time"
+]
+
+model_data = df[features + [target]].dropna()
+
+X = model_data[features]
+y = model_data[target]
+
+categorical_features = X.select_dtypes(include=["object", "bool"]).columns.tolist()
+numeric_features = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+        ("num", "passthrough", numeric_features)
+    ]
+)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+print("Training rows:", X_train.shape[0])
+print("Testing rows:", X_test.shape[0])
+```
+
+### 5.3 Train and Evaluate Models
+
+```{python}
+models = {
+    "Linear Regression": LinearRegression(),
+    "Random Forest": RandomForestRegressor(
+        n_estimators=300,
+        max_depth=10,
+        random_state=42
+    ),
+    "XGBoost": XGBRegressor(
+        n_estimators=300,
+        learning_rate=0.05,
+        max_depth=5,
+        random_state=42,
+        objective="reg:squarederror"
+    )
+}
+
+results = []
+
+trained_models = {}
+
+for model_name, model in models.items():
+    pipeline = Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            ("model", model)
+        ]
+    )
+    
+    pipeline.fit(X_train, y_train)
+    predictions = pipeline.predict(X_test)
+    
+    mae = mean_absolute_error(y_test, predictions)
+    rmse = np.sqrt(mean_squared_error(y_test, predictions))
+    r2 = r2_score(y_test, predictions)
+    
+    results.append({
+        "Model": model_name,
+        "MAE": mae,
+        "RMSE": rmse,
+        "R2": r2
+    })
+    
+    trained_models[model_name] = pipeline
+
+results_df = pd.DataFrame(results).sort_values(by="RMSE")
+
+print(results_df)
+```
+
+### Model Performance Insight
+
+XGBoost achieved the strongest predictive performance among all tested models, producing the lowest RMSE and highest R² score.
+
+The results indicate that delivery duration can be predicted with very high accuracy using operational, traffic-related, and order-complexity variables.
+
+Tree-based models such as Random Forest and XGBoost substantially outperformed Linear Regression, suggesting that food delivery operations involve important non-linear relationships and interaction effects.
+
+Even the Linear Regression model achieved strong predictive performance, indicating that the dataset contains highly informative operational features.
+
+
+
+### 5.4 Choose the Best Model
+
+```{python}
+best_model_name = results_df.iloc[0]["Model"]
+best_model = trained_models[best_model_name]
+
+print("Best Model:", best_model_name)
+print("Best RMSE:", round(results_df.iloc[0]["RMSE"], 2))
+print("Best MAE:", round(results_df.iloc[0]["MAE"], 2))
+print("Best R²:", round(results_df.iloc[0]["R2"], 4))
+```
+
+Best Model: XGBoost
+Best RMSE: 1.2
+Best MAE: 0.44
+Best R²: 0.9788
+
+
+### 5.5 Model Performance Visualization
+
+```{python}
+plt.figure(figsize=(8,5))
+sns.barplot(x="Model", y="RMSE", data=results_df)
+plt.title("Model Comparison by RMSE")
+plt.ylabel("RMSE")
+plt.xticks(rotation=30)
+plt.show()
+
+plt.figure(figsize=(8,5))
+sns.barplot(x="Model", y="R2", data=results_df)
+plt.title("Model Comparison by R²")
+plt.ylabel("R²")
+plt.xticks(rotation=30)
+plt.show()
+```
+
+
+
+### 5.6 Feature Importance from the Best Tree-Based Model
+
+```{python}
+if best_model_name in ["Random Forest", "XGBoost"]:
+    feature_names = best_model.named_steps["preprocessor"].get_feature_names_out()
+    importances = best_model.named_steps["model"].feature_importances_
+    
+    importance_df = pd.DataFrame({
+        "Feature": feature_names,
+        "Importance": importances
+    }).sort_values(by="Importance", ascending=False)
+    
+    print(importance_df.head(15))
+    
+    plt.figure(figsize=(10,6))
+    sns.barplot(
+        x="Importance",
+        y="Feature",
+        data=importance_df.head(15)
+    )
+    plt.title(f"Top 15 Feature Importances - {best_model_name}")
+    plt.show()
+else:
+    print("Feature importance is not directly available for Linear Regression in this format.")
+```
+
+### Feature Importance Insight
+
+Distance was by far the most important predictor of delivery duration, accounting for the largest share of model importance.
+
+Pizza size, topping density, pizza complexity, and toppings count also contributed meaningfully to delivery duration prediction, indicating that operational workload and order customization strongly affect delivery performance.
+
+Restaurant-level operational factors and order timing variables also demonstrated predictive value, confirming that delivery efficiency is influenced by both operational conditions and customer ordering behavior.
+
+The feature importance results strongly support earlier exploratory and operational analyses conducted throughout the project.
+
+### Business Recommendation
+
+Restaurants may improve delivery efficiency by optimizing routing strategies for long-distance orders and allocating additional preparation resources for highly customized or large pizza orders.
+
+Operational planning during high-demand periods may also help reduce delivery duration and improve delivery reliability.
+
+
+
+
+
+
+######  Final Conclusion 
+
+This project analyzed customer behavior, operational performance, delivery efficiency, and seasonal trends using pizza delivery data.
+
+The findings showed that traffic conditions, peak-hour demand, delivery distance, and pizza complexity strongly influence delivery duration and delay probability.
+
+Machine learning models achieved very high predictive accuracy, with XGBoost producing the best overall performance.
+
+Overall, the project demonstrates how operational analytics and predictive modeling can support delivery optimization, resource planning, and customer service improvement in food delivery operations.
+
+
+
+
 
 
 
